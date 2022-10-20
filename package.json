@@ -10,11 +10,17 @@
   },
   "license": "MIT",
   "devDependencies": {
+    "@types/download": "^8.0.1",
+    "@types/fs-extra": "^9.0.13",
     "typescript": "^4.8.2",
     "vite": "^3.0.9",
     "vite-plugin-solid": "^2.3.0"
   },
   "dependencies": {
-    "solid-js": "^1.5.1"
+    "download": "^8.0.0",
+    "fs-extra": "^10.1.0",
+    "scrape-it": "^5.3.2",
+    "solid-js": "^1.5.1",
+    "ts-node": "^10.9.1"
   }
 }
