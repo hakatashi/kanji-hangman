@@ -17,8 +17,10 @@
     "vite-plugin-solid": "^2.3.0"
   },
   "dependencies": {
+    "@types/lodash": "^4.14.186",
     "download": "^8.0.0",
     "fs-extra": "^10.1.0",
+    "lodash": "^4.17.21",
     "scrape-it": "^5.3.2",
     "solid-js": "^1.5.1",
     "ts-node": "^10.9.1"

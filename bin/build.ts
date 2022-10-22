@@ -192,11 +192,9 @@ const traverseComponentChars = (component: Component) => {
 		const char = joyoChars[Math.floor(Math.random() * joyoChars.length)];
 		console.log(inspect(characterIds.get(char), {depth: null, colors: true}));
 	}
-	for (const char of Array.from('起死回生')) {
-		console.log(inspect(characterIds.get(char), {depth: null, colors: true}));
-	}
 
 	const counter = new Map<string, number>();
+	const components = Object.create(null);
 	for (const char of joyoChars) {
 		if (characterIds.has(char)) {
 			const componentChars = traverseComponentChars(characterIds.get(char)!);
@@ -206,8 +204,15 @@ const traverseComponentChars = (component: Component) => {
 				}
 				counter.set(char, counter.get(char)! + 1);
 			}
+
+			components[char] = characterIds.get(char);
 		} else {
 			console.error(char);
 		}
 	}
+
+	const wordsData = await fs.readFile(`${__dirname}/words.txt`, 'utf8');
+	const words = wordsData.split(/\r?\n/).filter((c) => c);
+
+	await fs.writeJson(`${__dirname}/data.json`, {components, words});
 })()
