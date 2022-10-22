@@ -261,7 +261,7 @@ const App: Component = () => {
 		setTextInput('');
 		setMessage('')
 
-		doGuess(getTextInput());
+		doGuess(textInput);
 	};
 
 	const handleClickButton = (button: string) => {
@@ -274,12 +274,9 @@ const App: Component = () => {
 		const chars = getChars();
 		if (chars.has(guess)) {
 			setHitChars([...getHitChars(), guess]);
-			const isClear = Array.from(getWord()).every((char) => {
+			const isClear = Array.from(getWord()).every((char) => ( 
 				getHitChars().includes(char)
-			});
-			console.log(Array.from(getWord()).map((char) => {
-				getHitChars().includes(char)
-			}));
+			));
 			
 			if (isClear) {
 				setMessage('クリアです! すごい(@_@)');
