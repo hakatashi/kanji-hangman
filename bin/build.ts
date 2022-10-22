@@ -126,14 +126,19 @@ const traverseComponentChars = (component: Component) => {
 				continue;
 			}
 
-			const [codepoint, char, ids] = line.split('\t');
+			const [codepoint, char, ids, additionalInfo] = line.split('\t');
+			let sequenceString = ids;
+			if (additionalInfo) {
+				sequenceString = additionalInfo.split('=')[1];
+			}
+
 			if (!ids) {
 				characterIds.set(char, {type: '　', char, children: []} as Component);
 				continue;
 			}
 
 			try {
-				const sequence = parseIds(ids)
+				const sequence = parseIds(sequenceString)
 				if (sequence.type === '　' && sequence.char !== null && sequence.char !== char) {
 					aliases.set(char, sequence.char);
 				} else {
@@ -183,7 +188,7 @@ const traverseComponentChars = (component: Component) => {
 		traverseFill(component);
 	}
 
-	for (const i of Array(100).keys()) {
+	for (const i of Array(1).keys()) {
 		const char = joyoChars[Math.floor(Math.random() * joyoChars.length)];
 		console.log(inspect(characterIds.get(char), {depth: null, colors: true}));
 	}
@@ -201,6 +206,8 @@ const traverseComponentChars = (component: Component) => {
 				}
 				counter.set(char, counter.get(char)! + 1);
 			}
+		} else {
+			console.error(char);
 		}
 	}
 })()
