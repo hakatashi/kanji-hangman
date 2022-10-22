@@ -1,4 +1,4 @@
-import { Component, createMemo, createSignal } from 'solid-js';
+import { Component, createMemo, createSignal, JSX } from 'solid-js';
 
 import styles from './App.module.css';
 import data from '../bin/data.json';
@@ -104,6 +104,17 @@ const calculateChartNodes = (components: KanjiComponent[]) => {
 	return chartNodes;
 };
 
+const getComponentChars = (component: KanjiComponent) => {
+	const chars: string[] = [];
+	if (component.char !== null) {
+		chars.push(component.char);
+	}
+	for (const child of component.children) {
+		chars.push(...getComponentChars(child));
+	}
+	return chars;
+};
+
 const getLeaves = (component: KanjiComponent) => {
 	if (component.children.length === 0) {
 		return [component];
@@ -127,7 +138,7 @@ const getMaxDepth = (component: KanjiComponent, depth = 0) => {
 	return maxDepth;
 };
 
-const getChartNodeSvg = (chartNode: ChartNode, hitChars: string[], parentHit = false) => {
+const getChartNodeSvg = (chartNode: ChartNode, isGiveUp: boolean, hitChars: string[], parentHit = false) => {
 	let nodeColor = 'white';
 
 	if (chartNode.type !== 'char') {
@@ -152,7 +163,7 @@ const getChartNodeSvg = (chartNode: ChartNode, hitChars: string[], parentHit = f
 				stroke="black"
 				stroke-width="5"
 			/>
-			{chartNode.char && (
+			{chartNode.char && (isGiveUp || nodeColor !== 'white') && (
 				<text
 					x={chartNode.x * 100 + 50}
 					y={chartNode.y * 100 + 65}
@@ -174,7 +185,7 @@ const getChartNodeSvg = (chartNode: ChartNode, hitChars: string[], parentHit = f
 						stroke="black"
 						stroke-width="5"
 					/>
-					{getChartNodeSvg(child, hitChars, parentHit)}
+					{getChartNodeSvg(child, isGiveUp, hitChars, parentHit)}
 				</>
 			))}
 		</g>
@@ -183,7 +194,11 @@ const getChartNodeSvg = (chartNode: ChartNode, hitChars: string[], parentHit = f
 
 const App: Component = () => {
 	const [getWord, setWord] = createSignal(getRandomWord());
-	const [getHitChars, setHitChars] = createSignal(['一', '日', '田', '月']);
+	const [getHitChars, setHitChars] = createSignal<string[]>([]);
+	const [getTextInput, setTextInput] = createSignal('');
+	const [getMessage, setMessage] = createSignal('');
+	const [getLife, setLife] = createSignal(6);
+	const [getIsGiveUp, setIsGiveUp] = createSignal(false);
 
 	const getComponents = createMemo(() => {
 		const word = getWord();
@@ -192,6 +207,16 @@ const App: Component = () => {
 			components.push(data.components[char] as KanjiComponent);
 		}
 		return components;
+	});
+
+	const getChars = createMemo(() => {
+		const chars = new Set();
+		for (const component of getComponents()) {
+			for (const char of getComponentChars(component)) {
+				chars.add(char);
+			}
+		}
+		return chars;
 	});
 
 	const getChartWidth = createMemo(() => {
@@ -213,6 +238,45 @@ const App: Component = () => {
 		return calculateChartNodes(components);
 	});
 
+	const handleTextInput: JSX.EventHandlerUnion<HTMLInputElement, Event> = (event) => {
+		setTextInput((event.target as HTMLInputElement).value);
+	};
+
+	const handleSubmitGuessForm: JSX.EventHandlerUnion<HTMLFormElement, Event> = (event) => {
+		event.preventDefault();
+
+		const textInput = getTextInput();
+		if (Array.from(textInput).length !== 1) {
+			setMessage('1文字を入力してください。');
+			return;
+		}
+
+		if (getLife() < 0) {
+			setMessage('もう入力できません(@_@)');
+			return;
+		}
+
+		setTextInput('');
+		setMessage('')
+
+		const chars = getChars();
+		if (chars.has(textInput)) {
+			setHitChars([...getHitChars(), textInput]);
+			const isClear = Array.from(getWord()).every((char) => {
+				getHitChars().includes(char)
+			});
+			if (isClear) {
+				setMessage('クリアです! すごい(@_@)');
+			}
+		} else {
+			if (getLife() === 0) {
+				setMessage('残念(ToT)');
+				setIsGiveUp(true);
+			}
+			setLife(getLife() - 1);
+		}
+	};
+
 	return (
 		<div class={styles.App}>
 			<header class={styles.header}>
@@ -223,20 +287,21 @@ const App: Component = () => {
 				class={styles.chart}
 			>
 				{chartNodes().map((chartNode) => (
-					getChartNodeSvg(chartNode, getHitChars())
+					getChartNodeSvg(chartNode, getIsGiveUp(), getHitChars())
 				))}
 			</svg>
-			<div>
-				<input type="text" />
-				<button type="button">Guess!</button>
-			</div>
+			<form onSubmit={handleSubmitGuessForm}>
+				<input type="text" onInput={handleTextInput} value={getTextInput()} />
+				<button type="submit">Guess!</button>
+			</form>
+			<div>{getMessage()}</div>
 			<ul class={styles.rules}>
 				<li>上のツリーは四字熟語を構成する4文字の漢字の構造を表しています。</li>
 				<li>テキスト入力エリアに漢字のパーツを入力してguessしてください。最初は「一」や「口」などがおすすめです。</li>
 				<li>入力した漢字のパーツがツリーのどこかに含まれる場合、その場所が与えられ、含まれない場合はライフが減少します。</li>
 				<li>灰色の丸はUnicodeで表現できない字体が該当することを表しています。この文字をguessすることはできません。</li>
 			</ul>
-			<div>残りライフ: 6</div>
+			<div>残りライフ: {getLife()}</div>
 		</div>
 	);
 };
