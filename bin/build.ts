@@ -18,6 +18,13 @@ const idcArguments = new Map([
 	['⿻', 2],
 ]);
 
+const normalizeChar = (char: string) => {
+	if (char === '辶') {
+		return '辶\u{E0101}';
+	}
+	return char;
+};
+
 const splitIds = (ids: string) => {
 	let remnant = Array.from(ids);
 	const idcs = [];
@@ -66,7 +73,7 @@ const parseIds = (ids: string) => {
 
 		return {
 			type: '　',
-			char: idc,
+			char: normalizeChar(idc),
 			children: [],
 		} as Component;
 	}
@@ -162,7 +169,7 @@ const traverseComponentChars = (component: Component) => {
 		if (sequence.type === '　' && sequence.char !== null && sequence.char !== char) {
 			aliases.set(char, sequence.char);
 		} else {
-			sequence.char = char;
+			sequence.char = normalizeChar(char);
 			characterIds.set(char, sequence);
 		}
 	}
