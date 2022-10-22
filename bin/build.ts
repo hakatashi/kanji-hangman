@@ -218,8 +218,10 @@ const traverseComponentChars = (component: Component) => {
 		}
 	}
 
+	const partsList = Array.from(counter.entries()).sort(([, a], [, b]) => b - a);
+
 	const wordsData = await fs.readFile(`${__dirname}/words.txt`, 'utf8');
 	const words = wordsData.split(/\r?\n/).filter((c) => c);
 
-	await fs.writeJson(`${__dirname}/data.json`, {components, words});
+	await fs.writeJson(`${__dirname}/data.json`, {components, words, partsList});
 })()

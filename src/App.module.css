@@ -23,3 +23,32 @@
 	display: inline-block;
 	text-align: left;
 }
+
+.heading {
+	font-size: 2rem;
+}
+
+.buttons {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+}
+
+.button {
+	width: 3rem;
+	height: 3rem;
+	margin: 0.2rem;
+	background: rgb(255, 253, 199);
+	cursor: pointer;
+	border-radius: 0.2rem;
+
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	font-size: 2.5rem;
+	font-weight: bold;
+}
+
+.button.disabled {
+	background: grey;
+}

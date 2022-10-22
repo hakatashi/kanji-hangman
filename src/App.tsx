@@ -6,6 +6,7 @@ import sample from 'lodash/sample';
 import first from 'lodash/first';
 import last from 'lodash/last';
 import { max } from 'lodash';
+import classNames from 'classnames';
 
 interface KanjiComponent {
 	type: string,
@@ -197,8 +198,9 @@ const App: Component = () => {
 	const [getHitChars, setHitChars] = createSignal<string[]>([]);
 	const [getTextInput, setTextInput] = createSignal('');
 	const [getMessage, setMessage] = createSignal('');
-	const [getLife, setLife] = createSignal(6);
+	const [getLife, setLife] = createSignal(10);
 	const [getIsGiveUp, setIsGiveUp] = createSignal(false);
+	const [getHistory, setHistory] = createSignal<string[]>([]);
 
 	const getComponents = createMemo(() => {
 		const word = getWord();
@@ -246,7 +248,7 @@ const App: Component = () => {
 		event.preventDefault();
 
 		const textInput = getTextInput();
-		if (Array.from(textInput).length !== 1) {
+		if (textInput !== '辶󠄁' && Array.from(textInput).length !== 1) {
 			setMessage('1文字を入力してください。');
 			return;
 		}
@@ -259,23 +261,39 @@ const App: Component = () => {
 		setTextInput('');
 		setMessage('')
 
+		doGuess(getTextInput());
+	};
+
+	const handleClickButton = (button: string) => {
+		doGuess(button);
+	};
+
+	const doGuess = (guess: string) => {
+		setHistory([...getHistory(), guess]);
+
 		const chars = getChars();
-		if (chars.has(textInput)) {
-			setHitChars([...getHitChars(), textInput]);
+		if (chars.has(guess)) {
+			setHitChars([...getHitChars(), guess]);
 			const isClear = Array.from(getWord()).every((char) => {
 				getHitChars().includes(char)
 			});
+			console.log(Array.from(getWord()).map((char) => {
+				getHitChars().includes(char)
+			}));
+			
 			if (isClear) {
 				setMessage('クリアです! すごい(@_@)');
 			}
 		} else {
-			if (getLife() === 0) {
+			if (getLife() === 1) {
 				setMessage('残念(ToT)');
 				setIsGiveUp(true);
 			}
 			setLife(getLife() - 1);
 		}
 	};
+
+	const buttons = (data.partsList as [string, number][]).slice(0, 100).map(([char]) => char).sort();
 
 	return (
 		<div class={styles.App}>
@@ -290,18 +308,35 @@ const App: Component = () => {
 					getChartNodeSvg(chartNode, getIsGiveUp(), getHitChars())
 				))}
 			</svg>
+
+			<div>残りライフ: {getLife()} / 入力履歴: {getHistory().join(', ')}</div>
+
 			<form onSubmit={handleSubmitGuessForm}>
 				<input type="text" onInput={handleTextInput} value={getTextInput()} />
 				<button type="submit">Guess!</button>
 			</form>
 			<div>{getMessage()}</div>
+
+			<div class={styles.heading}>頻出パーツ100</div>
+			<div class={styles.buttons}>
+				{buttons.map((button) => (
+					<div
+						class={classNames(
+							styles.button,
+							{[styles.disabled]: getHistory().includes(button)},
+						)}
+						onClick={handleClickButton.bind(null, button)}
+					>
+						{button}
+					</div>
+				))}
+			</div>
 			<ul class={styles.rules}>
 				<li>上のツリーは四字熟語を構成する4文字の漢字の構造を表しています。</li>
 				<li>テキスト入力エリアに漢字のパーツを入力してguessしてください。最初は「一」や「口」などがおすすめです。</li>
 				<li>入力した漢字のパーツがツリーのどこかに含まれる場合、その場所が与えられ、含まれない場合はライフが減少します。</li>
 				<li>灰色の丸はUnicodeで表現できない字体が該当することを表しています。この文字をguessすることはできません。</li>
 			</ul>
-			<div>残りライフ: {getLife()}</div>
 		</div>
 	);
 };
