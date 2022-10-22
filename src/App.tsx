@@ -127,45 +127,63 @@ const getMaxDepth = (component: KanjiComponent, depth = 0) => {
 	return maxDepth;
 };
 
-const getChartNodeSvg = (chartNode: ChartNode) => (
-	<g>
-		<circle
-			cx={chartNode.x * 100 + 50}
-			cy={chartNode.y * 100 + 50}
-			r="30"
-			fill={chartNode.type === 'char' ? 'white' : 'dimgrey'}
-			stroke="black"
-			stroke-width="5"
-		/>
-		{chartNode.char && (
-			<text
-				x={chartNode.x * 100 + 50}
-				y={chartNode.y * 100 + 65}
-				text-anchor="middle"
-				font-weight="bold"
-			>
-				{chartNode.char}
-			</text>
-		)}
+const getChartNodeSvg = (chartNode: ChartNode, hitChars: string[], parentHit = false) => {
+	let nodeColor = 'white';
 
-		{chartNode.children.map((child) => (
-			<>
-				<line
-					x1={chartNode.x * 100 + 50}
-					y1={chartNode.y * 100 + 80}
-					x2={child.x * 100 + 50}
-					y2={child.y * 100 + 20}
-					stroke="black"
-					stroke-width="5"
-				/>
-				{getChartNodeSvg(child)}
-			</>
-		))}
-	</g>
-);
+	if (chartNode.type !== 'char') {
+		nodeColor = 'dimgrey';
+	} else if (chartNode.char !== null && hitChars.includes(chartNode.char)) {
+		nodeColor = 'salmon';
+	} else if (parentHit) {
+		nodeColor = 'wheat';
+	}
+
+	if (chartNode.char !== null && hitChars.includes(chartNode.char)) {
+		parentHit = true;
+	}
+
+	return (
+		<g>
+			<circle
+				cx={chartNode.x * 100 + 50}
+				cy={chartNode.y * 100 + 50}
+				r="30"
+				fill={nodeColor}
+				stroke="black"
+				stroke-width="5"
+			/>
+			{chartNode.char && (
+				<text
+					x={chartNode.x * 100 + 50}
+					y={chartNode.y * 100 + 65}
+					text-anchor="middle"
+					font-weight="bold"
+					font-size="40"
+				>
+					{chartNode.char}
+				</text>
+			)}
+
+			{chartNode.children.map((child) => (
+				<>
+					<line
+						x1={chartNode.x * 100 + 50}
+						y1={chartNode.y * 100 + 80}
+						x2={child.x * 100 + 50}
+						y2={child.y * 100 + 20}
+						stroke="black"
+						stroke-width="5"
+					/>
+					{getChartNodeSvg(child, hitChars, parentHit)}
+				</>
+			))}
+		</g>
+	);
+};
 
 const App: Component = () => {
 	const [getWord, setWord] = createSignal(getRandomWord());
+	const [getHitChars, setHitChars] = createSignal(['一', '日', '田', '月']);
 
 	const getComponents = createMemo(() => {
 		const word = getWord();
@@ -198,10 +216,27 @@ const App: Component = () => {
 	return (
 		<div class={styles.App}>
 			<header class={styles.header}>
-				<svg viewBox={`0 0 ${getChartWidth() * 100} ${getChartHeight() * 100}`}>
-					{chartNodes().map(getChartNodeSvg)}
-				</svg>
+				<h1>漢字hangman</h1>
 			</header>
+			<svg
+				viewBox={`0 0 ${getChartWidth() * 100} ${getChartHeight() * 100}`}
+				class={styles.chart}
+			>
+				{chartNodes().map((chartNode) => (
+					getChartNodeSvg(chartNode, getHitChars())
+				))}
+			</svg>
+			<div>
+				<input type="text" />
+				<button type="button">Guess!</button>
+			</div>
+			<ul class={styles.rules}>
+				<li>上のツリーは四字熟語を構成する4文字の漢字の構造を表しています。</li>
+				<li>テキスト入力エリアに漢字のパーツを入力してguessしてください。最初は「一」や「口」などがおすすめです。</li>
+				<li>入力した漢字のパーツがツリーのどこかに含まれる場合、その場所が与えられ、含まれない場合はライフが減少します。</li>
+				<li>灰色の丸はUnicodeで表現できない字体が該当することを表しています。この文字をguessすることはできません。</li>
+			</ul>
+			<div>残りライフ: 6</div>
 		</div>
 	);
 };
