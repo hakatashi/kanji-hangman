@@ -223,5 +223,55 @@ const traverseComponentChars = (component: Component) => {
 	const wordsData = await fs.readFile(`${__dirname}/words.txt`, 'utf8');
 	const words = wordsData.split(/\r?\n/).filter((c) => c);
 
-	await fs.writeJson(`${__dirname}/data.json`, {components, words, partsList});
+	const hardWordsData = await fs.readFile(`${__dirname}/hardWords.txt`, 'utf8');
+	const hardWords = hardWordsData.split(/\r?\n/).filter((c) => c);
+
+	const extremeWordsData = await fs.readFile(`${__dirname}/extremeWords.txt`, 'utf8');
+	const extremeWords = extremeWordsData.split(/\r?\n/).filter((c) => c);
+
+	for (const word of [...words, ...hardWords, ...extremeWords]) {
+		for (const char of Array.from(word)) {
+			if (characterIds.has(char)) {
+				components[char] = characterIds.get(char);
+			} else {
+				console.error(char);
+			}
+		}
+	}
+	
+	const hardCounter = new Map<string, number>();
+	const hardChars = new Set(Array.from(hardWords.join('')));
+	for (const char of hardChars) {
+		if (characterIds.has(char)) {
+			const componentChars = traverseComponentChars(characterIds.get(char)!);
+			for (const char of new Set(componentChars)) {
+				if (!hardCounter.has(char)) {
+					hardCounter.set(char, 0);
+				}
+				hardCounter.set(char, hardCounter.get(char)! + 1);
+			}
+		} else {
+			console.error(char);
+		}
+	}
+	const hardPartsList = Array.from(hardCounter.entries()).sort(([, a], [, b]) => b - a).slice(0, 100);
+
+	const extremeCounter = new Map<string, number>();
+	const extremeChars = new Set(Array.from(hardWords.join('')));
+	for (const char of extremeChars) {
+		if (characterIds.has(char)) {
+			const componentChars = traverseComponentChars(characterIds.get(char)!);
+			for (const char of new Set(componentChars)) {
+				if (!extremeCounter.has(char)) {
+					extremeCounter.set(char, 0);
+				}
+				extremeCounter.set(char, extremeCounter.get(char)! + 1);
+			}
+		} else {
+			console.error(char);
+		}
+	}
+	const extremePartsList = Array.from(extremeCounter.entries()).sort(([, a], [, b]) => b - a).slice(0, 100);
+
+	await fs.writeJson(`${__dirname}/data.json`, {components, words, hardWords, extremeWords, partsList, hardPartsList, extremePartsList});
 })()

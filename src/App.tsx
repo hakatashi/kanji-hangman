@@ -23,10 +23,22 @@ interface ChartNode {
 }
 
 const getRandomWord = () => {
+	const params = new URLSearchParams(location.search);
+	const mode = params.get('mode');
+	let wordList: string[] = [];
+
+	if (mode === 'extreme') {
+		wordList = data.extremeWords;
+	} else if (mode === 'hard') {
+		wordList = data.extremeWords;
+	} else {
+		wordList = data.words;
+	}
+
 	let leaves: KanjiComponent[] = [];
 	let word = '';
 	while (leaves.length < 10) {
-		word = sample(data.words);
+		word = sample(wordList)!;
 		leaves = [];
 		for (const char of Array.from(word)) {
 			if (!{}.hasOwnProperty.call(data.components, char)) {
@@ -248,6 +260,13 @@ const App: Component = () => {
 		event.preventDefault();
 
 		const textInput = getTextInput();
+
+		if (textInput === getWord()) {
+			setHitChars([...getHitChars(), ...Array.from(getWord())]);
+			setMessage('クリアです! すごい(@_@)');
+			return;
+		}
+
 		if (textInput !== '辶󠄁' && Array.from(textInput).length !== 1) {
 			setMessage('1文字を入力してください。');
 			return;
@@ -290,12 +309,29 @@ const App: Component = () => {
 		}
 	};
 
-	const buttons = (data.partsList as [string, number][]).slice(0, 100).map(([char]) => char).sort();
+	const params = new URLSearchParams(location.search);
+	const mode = params.get('mode');
+
+	const buttons: string[] = [];
+	if (mode === 'extreme') {
+		buttons.push(...(data.extremePartsList as [string, number][]).slice(0, 100).map(([char]) => char).sort());
+	} else if (mode === 'hard') {
+		buttons.push(...(data.hardPartsList as [string, number][]).slice(0, 100).map(([char]) => char).sort());
+	} else {
+		buttons.push(...(data.partsList as [string, number][]).slice(0, 100).map(([char]) => char).sort());
+	}
 
 	return (
 		<div class={styles.App}>
 			<header class={styles.header}>
 				<h1>漢字hangman</h1>
+				<div>
+					<a href="./?mode=normal">normal</a>
+					{' / '}
+					<a href="./?mode=hard">hard</a>
+					{' / '}
+					<a href="./?mode=extreme">extreme</a>
+				</div>
 			</header>
 			<svg
 				viewBox={`0 0 ${getChartWidth() * 100} ${getChartHeight() * 100}`}
